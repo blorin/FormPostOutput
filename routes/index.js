@@ -3,16 +3,16 @@ var router = express.Router();
 var bodyParser = require("body-parser");
 var fs = require("fs");
 var builder = require("xmlbuilder");
-
+var sanitize = require("sanitize-filename");
 
 router.use(bodyParser.urlencoded({extended: true}));
 
 /* GET home page. */
-
 router.get("/", function(req, res) {
   res.render("index", { title: "XML Conversion Receiver" });
 });
 
+/* POST data receiver*/
 router.post("/:template", function(req,res){
   console.log("Got a post at /" + req.params.template);
 
@@ -36,12 +36,21 @@ router.post("/:template", function(req,res){
       fs.mkdirSync(dir);
     }
 
-    fs.writeFile(dir + '/hello.txt', xml, function (err,data) {
+    var outputFile = sanitize(req.params.template);
+
+    var fileCounter = 1;
+    while(fs.existsSync(dir + "/" + outputFile + "_" + fileCounter + ".xml")){
+      fileCounter++;
+    }
+
+    fs.writeFile(dir + "/" + outputFile + "_" + fileCounter + ".xml", xml, function (err,data) {
       if (err) {
         res.status(500).send("Unable to write output xml - " + err);
         return console.log(err);
       }
     });
+
+    res.status(200).send("Output file generated.")
   });
 });
 
