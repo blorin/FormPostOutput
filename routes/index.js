@@ -17,15 +17,19 @@ router.post("/:template", function(req,res){
   console.log("Got a post at /" + req.params.template);
 
   var templateFile = "templates/" + req.params.template + ".js";
-  if (!fs.existsSync(templateFile)){
-    res.status(400).send("Invalid XML template specified.");
-    return;
-  }
 
   var xml = "";
   fs.readFile(templateFile,"utf8",function (err,data) {
     if(err) {
-      res.status(500).send("Error reading template - " + err);
+      if (err.code == "ENOENT")
+      {
+        res.status(400).send("Specified template not found.  If you want to use a default template, do not provide " +
+          "a template in the URL.");
+      }
+      else
+      {
+        res.status(400).send("Error reading template - " + err);
+      }
       return console.log(err);
     }
 
