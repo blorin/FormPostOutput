@@ -3,7 +3,7 @@ var router = express.Router();
 var bodyParser = require("body-parser");
 var fs = require("fs");
 var builder = require("xmlbuilder");
-var sanitize = require("sanitize-filename");
+var tmp = require("tmp");
 
 router.use(bodyParser.urlencoded({extended: true}));
 
@@ -35,26 +35,31 @@ router.post("/:template", function(req,res){
 
     xml = keyParser(eval(data), req.body);
 
-    var dir = 'output';
-    if (!fs.existsSync(dir)){
-      fs.mkdirSync(dir);
-    }
-
-    var outputFile = sanitize(req.params.template);
-
-    var fileCounter = 1;
-    while(fs.existsSync(dir + "/" + outputFile + "_" + fileCounter + ".xml")){
-      fileCounter++;
-    }
-
-    fs.writeFile(dir + "/" + outputFile + "_" + fileCounter + ".xml", xml, function (err,data) {
-      if (err) {
-        res.status(500).send("Unable to write output xml - " + err);
+    var outputDir = 'output';
+    fs.mkdir(outputDir,function(err){
+      if(err && err.code != "EEXIST"){
+        res.status(500).send("Output folder error - " + err);
         return console.log(err);
       }
-    });
 
-    res.status(200).send("Output file generated.")
+      var outputFile = req.params.template;
+
+      tmp.file({ mode: 0644, prefix: outputFile + '_', postfix: '.xml', dir: outputDir }, function _tempFileCreated(err, path, fd) {
+        if (err){
+          res.status(500).send("Create file error - " + err);
+          return console.log(err);
+        }
+
+        fs.writeFile(path, xml, function (err,data) {
+          if (err) {
+            res.status(500).send("Unable to write output xml - " + err);
+            return console.log(err);
+          }
+
+          res.status(200).send("Output file generated.")
+        });
+      });
+    });
   });
 });
 
