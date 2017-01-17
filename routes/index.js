@@ -21,13 +21,9 @@ router.post("/:template", function(req,res){
   var xml = "";
   fs.readFile(templateFile,"utf8",function (err,data) {
     if(err) {
-      if (err.code == "ENOENT")
-      {
-        res.status(400).send("Specified template not found.  If you want to use a default template, do not provide " +
-          "a template in the URL.");
-      }
-      else
-      {
+      if (err.code == "ENOENT") {
+        res.status(400).send("Specified template not found.");
+      } else {
         res.status(400).send("Error reading template - " + err);
       }
       return console.log(err);
